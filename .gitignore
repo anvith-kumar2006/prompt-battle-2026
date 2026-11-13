@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Node (TypeScript compiler only)
+node_modules/
+package-lock.json
+
+# Uploads
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled frontend (decision: include for demo ease)
+# backend/app/static/js/*.js
+# backend/app/static/js/*.js.map

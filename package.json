@@ -1,0 +1,13 @@
+{
+  "name": "setu-frontend",
+  "version": "0.1.0",
+  "description": "SETU TypeScript compilation",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
