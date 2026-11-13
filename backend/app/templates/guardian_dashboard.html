@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Guardian Dashboard{% endblock %}
+{% block content %}
+<div style="padding:24px;">
+    <h2>Guardian Dashboard — Welcome, {{ user.name }}</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>My Students</h3>
+            <div id="students-list">Loading...</div>
+            <button onclick="showAddStudent()" style="margin-top:12px;padding:8px 16px;background:#0070f3;color:#fff;border:none;border-radius:4px;cursor:pointer;">+ Add Student</button>
+        </div>
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>Recent Ride Requests</h3>
+            <div id="rides-list">Loading...</div>
+        </div>
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>Notifications</h3>
+            <div id="notif-list">Loading...</div>
+        </div>
+    </div>
+</div>
+<div id="add-student-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:999;">
+    <div style="background:#fff;border-radius:8px;padding:24px;width:400px;margin:80px auto;">
+        <h3>Add Student</h3>
+        <input id="s-first-name" placeholder="First Name" style="width:100%;padding:8px;margin:4px 0 8px;"><br>
+        <input id="s-dob" type="date" placeholder="Date of Birth" style="width:100%;padding:8px;margin:4px 0 8px;"><br>
+        <input id="s-class" placeholder="Class (e.g. Grade 5)" style="width:100%;padding:8px;margin:4px 0 8px;"><br>
+        <input id="s-inst-id" type="number" placeholder="Institution ID" style="width:100%;padding:8px;margin:4px 0 8px;"><br>
+        <button onclick="addStudent()" style="padding:8px 16px;background:#0070f3;color:#fff;border:none;border-radius:4px;cursor:pointer;">Save</button>
+        <button onclick="document.getElementById('add-student-modal').style.display='none'" style="margin-left:8px;padding:8px 16px;border:1px solid #ccc;border-radius:4px;cursor:pointer;">Cancel</button>
+        <div id="student-err" style="color:red;margin-top:8px;"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function api(url, opts={}) {
+    const r = await fetch('/api/v1' + url, {credentials:'include', headers:{'Content-Type':'application/json'}, ...opts});
+    return r.json();
+}
+async function loadStudents() {
+    const d = await api('/students');
+    const el = document.getElementById('students-list');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(s => `<div style="padding:8px;border-bottom:1px solid #eee;"><strong>${s.first_name}</strong> — ${s.age_category} @ ${s.institution_name || 'Inst #'+s.institution_id}</div>`).join('');
+    } else { el.textContent = d.ok ? 'No students added yet.' : 'Error loading students.'; }
+}
+async function loadRides() {
+    const d = await api('/ride-requests');
+    const el = document.getElementById('rides-list');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(r => `<div style="padding:8px;border-bottom:1px solid #eee;">${r.travel_date} — <strong>${r.status}</strong></div>`).join('');
+    } else { el.textContent = d.ok ? 'No ride requests.' : 'Error loading rides.'; }
+}
+async function loadNotifs() {
+    const d = await api('/notifications');
+    const el = document.getElementById('notif-list');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(n => `<div style="padding:8px;border-bottom:1px solid #eee;">${n.subject}</div>`).join('');
+    } else { el.textContent = d.ok ? 'No notifications.' : 'Error loading.'; }
+}
+function showAddStudent() { document.getElementById('add-student-modal').style.display='block'; }
+async function addStudent() {
+    const err = document.getElementById('student-err');
+    err.textContent = '';
+    const dob = document.getElementById('s-dob').value;
+    const d = await api('/students', {method:'POST', body: JSON.stringify({
+        first_name: document.getElementById('s-first-name').value,
+        dob, class_label: document.getElementById('s-class').value,
+        institution_id: parseInt(document.getElementById('s-inst-id').value),
+        age_category: 'MINOR_SECONDARY'
+    })});
+    if (d.ok) { document.getElementById('add-student-modal').style.display='none'; loadStudents(); }
+    else { err.textContent = d.error?.message || 'Error adding student.'; }
+}
+loadStudents(); loadRides(); loadNotifs();
+</script>
+{% endblock %}

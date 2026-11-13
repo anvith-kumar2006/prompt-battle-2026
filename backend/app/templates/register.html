@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Create {{ role_name|lower }} account{% endblock %}
+{% block content %}
+<div class="container" style="max-width:480px;margin:60px auto;padding:24px;border:1px solid #ccc;border-radius:8px;">
+    <h1 style="text-align:center;">🛺 SETU</h1>
+    <h2>Create {{ role_name }} Account</h2>
+    <div id="error-msg" style="color:red;display:none;"></div>
+    <div id="success-msg" style="color:green;display:none;"></div>
+    <form id="register-form">
+        <label>Full Name<br><input type="text" id="name" required style="width:100%;padding:8px;margin:4px 0 12px;"></label>
+        <label>Email<br><input type="email" id="email" required style="width:100%;padding:8px;margin:4px 0 12px;"></label>
+        <label>Phone<br><input type="tel" id="phone" required style="width:100%;padding:8px;margin:4px 0 12px;"></label>
+        <label>Password<br><input type="password" id="password" required minlength="8" style="width:100%;padding:8px;margin:4px 0 12px;"></label>
+        <p>Account type: <strong>{{ role_name }}</strong></p>
+        <button type="submit" style="width:100%;padding:10px;background:#0070f3;color:#fff;border:none;border-radius:4px;cursor:pointer;">Register</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;"><a href="/login?role={{ role }}">Already registered? Sign in</a></p>
+    <p style="text-align:center;margin-top:8px;"><a href="/">Choose a different role</a></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errDiv = document.getElementById('error-msg');
+    const okDiv = document.getElementById('success-msg');
+    errDiv.style.display = 'none'; okDiv.style.display = 'none';
+    try {
+        const res = await fetch('/api/v1/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value,
+                role: {{ role|tojson }}
+            })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            okDiv.textContent = 'Account created! Redirecting to login...';
+            okDiv.style.display = 'block';
+            setTimeout(() => window.location.href = '/login?role={{ role }}', 1500);
+        } else {
+            errDiv.textContent = data.error?.message || 'Registration failed';
+            errDiv.style.display = 'block';
+        }
+    } catch (err) {
+        errDiv.textContent = 'Network error. Try again.';
+        errDiv.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

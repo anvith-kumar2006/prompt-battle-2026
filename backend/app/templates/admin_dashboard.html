@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div style="padding:24px;">
+    <h2>Admin Dashboard — {{ user.name }}</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>Pending Drivers</h3>
+            <div id="pending-drivers">Loading...</div>
+        </div>
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>Open Incidents</h3>
+            <div id="open-incidents">Loading...</div>
+        </div>
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>Ride Requests</h3>
+            <div id="ride-requests">Loading...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function api(url, opts={}) {
+    const r = await fetch('/api/v1' + url, {credentials:'include', headers:{'Content-Type':'application/json'}, ...opts});
+    return r.json();
+}
+async function approveDriver(id) {
+    const d = await api(`/admin/drivers/${id}/approve`, {method:'POST'});
+    if (d.ok) loadDrivers();
+    else alert(d.error?.message || 'Error');
+}
+async function loadDrivers() {
+    const d = await api('/admin/drivers?status=PENDING');
+    const el = document.getElementById('pending-drivers');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(dr => `<div style="padding:8px;border-bottom:1px solid #eee;">${dr.full_name} — ${dr.status} <button onclick="approveDriver(${dr.id})" style="margin-left:8px;padding:4px 8px;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;">Approve</button></div>`).join('');
+    } else { el.textContent = d.ok ? 'No pending drivers.' : 'Error.'; }
+}
+async function loadIncidents() {
+    const d = await api('/incidents?status=OPEN');
+    const el = document.getElementById('open-incidents');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(i => `<div style="padding:8px;border-bottom:1px solid #eee;">Trip ${i.trip_id} — <strong>${i.severity}</strong></div>`).join('');
+    } else { el.textContent = d.ok ? 'No open incidents.' : 'Error.'; }
+}
+async function loadRides() {
+    const d = await api('/ride-requests');
+    const el = document.getElementById('ride-requests');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(r => {
+            const matchBtn = r.status === 'SUBMITTED' ? `<button onclick="runMatch(${r.id})" style="margin-left:8px;padding:4px 8px;background:#0070f3;color:#fff;border:none;border-radius:4px;cursor:pointer;">Match</button>` : '';
+            return `<div style="padding:8px;border-bottom:1px solid #eee;">${r.travel_date} — ${r.status}${matchBtn}</div>`;
+        }).join('');
+    } else { el.textContent = d.ok ? 'No ride requests.' : 'Error.'; }
+}
+async function runMatch(id) {
+    const d = await api(`/ride-requests/${id}/match`, {method:'POST'});
+    if (d.ok) { alert(`Matched ${d.data.matches} providers`); loadRides(); }
+    else alert(d.error?.message || 'Error');
+}
+loadDrivers(); loadIncidents(); loadRides();
+</script>
+{% endblock %}
