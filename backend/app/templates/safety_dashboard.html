@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Safety Dashboard{% endblock %}
+{% block content %}
+<div style="padding:24px;">
+    <h2>Safety Dashboard — {{ user.name }}</h2>
+    <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:24px;">
+        <h3>Open Incidents</h3>
+        <div id="incidents">Loading...</div>
+    </div>
+    <div style="border:1px solid #ddd;border-radius:8px;padding:16px;">
+        <h3>Active Trips</h3>
+        <div id="active-trips">Loading...</div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function api(url, opts={}) {
+    const r = await fetch('/api/v1' + url, {credentials:'include', headers:{'Content-Type':'application/json'}, ...opts});
+    return r.json();
+}
+async function ack(id) {
+    const d = await api(`/incidents/${id}/acknowledge`, {method:'POST'});
+    if (d.ok) loadIncidents(); else alert(d.error?.message || 'Error');
+}
+async function resolve(id) {
+    const d = await api(`/incidents/${id}/resolve`, {method:'POST', body: JSON.stringify({resolution_type:'FALSE_ALARM',notes:'Reviewed by safety admin'})});
+    if (d.ok) loadIncidents(); else alert(d.error?.message || 'Error');
+}
+async function loadIncidents() {
+    const d = await api('/incidents?status=OPEN');
+    const el = document.getElementById('incidents');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(i => `
+            <div style="padding:8px;border-bottom:1px solid #eee;background:${i.severity==='HIGH'?'#fef2f2':'#fffbeb'}">
+                <strong>Trip ${i.trip_id}</strong> — ${i.severity} — ${i.cause_hint}
+                <button onclick="ack(${i.id})" style="margin-left:8px;padding:4px 8px;background:#f59e0b;color:#fff;border:none;border-radius:4px;cursor:pointer;">Acknowledge</button>
+                <button onclick="resolve(${i.id})" style="margin-left:4px;padding:4px 8px;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;">Resolve</button>
+            </div>`).join('');
+    } else { el.textContent = d.ok ? 'No open incidents. ✅' : 'Error loading.'; }
+}
+async function loadTrips() {
+    const d = await api('/trips');
+    const el = document.getElementById('active-trips');
+    const active = (d.data||[]).filter(t => ['EN_ROUTE_TO_PICKUP','AT_PICKUP','IN_PROGRESS','ARRIVED'].includes(t.status));
+    if (d.ok && active.length) {
+        el.innerHTML = active.map(t => `<div style="padding:8px;border-bottom:1px solid #eee;">Trip #${t.id} — <strong>${t.status}</strong> — Pickup: ${t.planned_pickup_at}</div>`).join('');
+    } else { el.textContent = d.ok ? 'No active trips.' : 'Error loading.'; }
+}
+loadIncidents(); loadTrips();
+setInterval(() => { loadIncidents(); loadTrips(); }, 10000);
+</script>
+{% endblock %}

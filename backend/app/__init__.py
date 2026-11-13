@@ -17,6 +17,12 @@ def create_app(config_class=Config):
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     
+    # User loader
+    @login_manager.user_loader
+    def load_user(user_id):
+        from backend.app.models import User
+        return User.query.get(int(user_id))
+
     # Register blueprints
     from backend.app.api import auth, students, providers, rides, consent, trips, gps, incidents, notifications, admin_bp, health
     
@@ -40,10 +46,10 @@ def create_app(config_class=Config):
     from backend.app import errors
     errors.register_error_handlers(app)
     
-    # Start background worker
-    if not app.config['TESTING']:
-        from backend.app.services.notify import start_email_worker
-        worker_thread = threading.Thread(target=start_email_worker, args=(app,), daemon=True)
-        worker_thread.start()
+    # Start background worker (disabled until notify service is implemented)
+    # if not app.config.get('TESTING'):
+    #     from backend.app.services.notify import start_email_worker
+    #     worker_thread = threading.Thread(target=start_email_worker, args=(app,), daemon=True)
+    #     worker_thread.start()
     
     return app

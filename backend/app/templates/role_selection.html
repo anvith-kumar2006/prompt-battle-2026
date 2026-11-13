@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Choose your role{% endblock %}
+{% block content %}
+<section class="role-page">
+    <div class="role-panel">
+        <p class="role-brand">SETU</p>
+        <p class="role-eyebrow">Safe journeys start here</p>
+        <h1>Are you a guardian or a driver?</h1>
+        <p class="role-intro">Choose how you use SETU to continue.</p>
+        <div class="role-options">
+            <a class="role-option" href="/login?role=GUARDIAN">
+                <span class="role-icon" aria-hidden="true">⌂</span>
+                <span class="role-option-copy">
+                    <strong>I’m a Guardian</strong>
+                    <span>Arrange and follow your child’s journey.</span>
+                </span>
+                <span class="role-arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="role-option" href="/login?role=DRIVER">
+                <span class="role-icon" aria-hidden="true">↗</span>
+                <span class="role-option-copy">
+                    <strong>I’m a Driver</strong>
+                    <span>Manage your rides and student pickups.</span>
+                </span>
+                <span class="role-arrow" aria-hidden="true">→</span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

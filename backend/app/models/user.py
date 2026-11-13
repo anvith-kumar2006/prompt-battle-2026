@@ -21,7 +21,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     students = db.relationship('Student', back_populates='guardian', foreign_keys='Student.guardian_id')
-    driver = db.relationship('Driver', back_populates='user', uselist=False)
+    driver = db.relationship('Driver', back_populates='user', uselist=False, foreign_keys='Driver.user_id')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

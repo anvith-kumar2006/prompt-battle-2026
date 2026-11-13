@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Driver Dashboard{% endblock %}
+{% block content %}
+<div style="padding:24px;">
+    <h2>Driver Dashboard — {{ user.name }}</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>My Profile</h3>
+            <div id="driver-profile">Loading...</div>
+            <button id="avail-btn" onclick="toggleAvailability()" style="margin-top:12px;padding:8px 16px;background:#0070f3;color:#fff;border:none;border-radius:4px;cursor:pointer;">Toggle Availability</button>
+        </div>
+        <div style="flex:1;min-width:300px;border:1px solid #ddd;border-radius:8px;padding:16px;">
+            <h3>My Trips</h3>
+            <div id="trips-list">Loading...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function api(url, opts={}) {
+    const r = await fetch('/api/v1' + url, {credentials:'include', headers:{'Content-Type':'application/json'}, ...opts});
+    return r.json();
+}
+async function loadDriver() {
+    const d = await api('/providers/driver');
+    const el = document.getElementById('driver-profile');
+    if (d.ok) {
+        el.innerHTML = `<p>Name: ${d.data.full_name}</p><p>Status: <strong>${d.data.status}</strong></p><p>Availability: <strong>${d.data.availability}</strong></p><p>Category: ${d.data.category}</p>`;
+    } else { el.textContent = 'No driver profile. Please register.'; }
+}
+async function loadTrips() {
+    const d = await api('/trips');
+    const el = document.getElementById('trips-list');
+    if (d.ok && d.data.length) {
+        el.innerHTML = d.data.map(t => `<div style="padding:8px;border-bottom:1px solid #eee;">${t.planned_pickup_at} — <strong>${t.status}</strong></div>`).join('');
+    } else { el.textContent = d.ok ? 'No trips.' : 'Error loading trips.'; }
+}
+async function toggleAvailability() {
+    const d = await api('/providers/driver/availability', {method:'PATCH'});
+    if (d.ok) loadDriver();
+    else alert(d.error?.message || 'Error');
+}
+loadDriver(); loadTrips();
+</script>
+{% endblock %}
